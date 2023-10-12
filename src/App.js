@@ -1,13 +1,27 @@
 import { useState, useEffect } from "react";
 import Card from "./components/Card";
 import Header from "./components/Header";
-
+import Signup from "./components/Signup";
+import Login from "./components/Login";
 const App = () => {
   const [deals, setDeals] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [priceRange, setPriceRange] = useState(null); 
-  const [sortOption, setSortOption] = useState(null); 
-
+  const [priceRange, setPriceRange] = useState(""); 
+  const [sortOption, setSortOption] = useState(""); 
+  const [loggedInUser, setLoggedInUser] = useState(null);
+  const [token, setToken] = useState(null);
+  
+  useEffect(() => {
+    const savedToken = localStorage.getItem('authToken');
+    const savedUser = localStorage.getItem('loggedInUser');
+    if (savedToken) {
+      setToken(savedToken);
+    }
+    if (savedUser) {
+      setLoggedInUser(savedUser);
+    }
+  }, []);
+  
   const getDeals = async (searchTerm = "deals of the day") => { 
     try {
       const response = await fetch(`http://localhost:8000/deals?search=${searchTerm}`, { method: "GET" });
@@ -54,9 +68,30 @@ const App = () => {
     getDeals();
   }, []);
 
+
+const handleLogout = () => {
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('loggedInUser');
+  setLoggedInUser(null);
+  setToken(null);
+};
+
+if (!token) {
   return (
     <div className="App">
       <Header />
+      <Login onLoginSuccess={(user) => { setLoggedInUser(user); setToken(true); }} />
+      <Signup onSignupSuccess={(user) => { setLoggedInUser(user); setToken(true); }} />
+    </div>
+  );
+}
+
+return (
+  <div className="App">
+    <Header />
+    <p>Welcome, {loggedInUser}!</p>
+    <button onClick={handleLogout}>Logout</button>
+
 
       <nav>
         <button className="primary">Amazon</button>
@@ -68,7 +103,7 @@ const App = () => {
         <label>
           Price Range:
           <select value={priceRange} onChange={e => setPriceRange(e.target.value)}>
-            <option value={null}>All</option>
+            <option value={""}>All</option>
             <option value="10-100">10 - 100</option>
             <option value="100-250">100 - 250</option>
             <option value="250-500">250 - 500</option>
@@ -79,7 +114,7 @@ const App = () => {
         <label>
           Sort By:
           <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
-            <option value={null}>None</option>
+            <option value={""}>None</option>
             <option value="lowestPrice">Lowest Price</option>
             <option value="highestPercentageOff">Highest Percentage Off</option>
           </select>
